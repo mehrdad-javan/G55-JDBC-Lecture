@@ -1,5 +1,7 @@
 package se.lexicon;
 
+import se.lexicon.db.MySQLConnection;
+
 import java.sql.*;
 import java.time.LocalDateTime;
 
@@ -44,7 +46,7 @@ public class JdbcDemo {
 
     public static void ex2() {
         try (
-                Connection connection = DriverManager.getConnection(URL, DB_USER, DB_PASSWORD);
+                Connection connection = MySQLConnection.getConnection();
                 PreparedStatement preparedStatement = connection.prepareStatement("SELECT id, name, class_group, create_date FROM student WHERE class_group LIKE ?");
 
                 ) {
