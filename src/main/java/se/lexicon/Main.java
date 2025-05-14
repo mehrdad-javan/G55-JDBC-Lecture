@@ -1,8 +1,12 @@
 package se.lexicon;
 
+import se.lexicon.dao.AttendanceDao;
 import se.lexicon.dao.StudentDao;
+import se.lexicon.dao.impl.AttendanceDaoImpl;
 import se.lexicon.dao.impl.StudentDaoImpl;
 import se.lexicon.db.MySQLConnection;
+import se.lexicon.model.Attendance;
+import se.lexicon.model.AttendanceStatus;
 import se.lexicon.model.Student;
 
 import java.sql.Connection;
@@ -11,25 +15,38 @@ import java.util.Scanner;
 
 public class Main {
     public static void main(String[] args) {
-
-        // MySQL
+        Connection mySqlConnection = null;
         try {
-            Connection mySqlConnection = MySQLConnection.getConnection();
-            StudentDao studentDao = new StudentDaoImpl(mySqlConnection);
+            mySqlConnection = MySQLConnection.getConnection();
+            mySqlConnection.setAutoCommit(false); // start transaction
 
-            Scanner scanner = new Scanner(System.in);
-            System.out.println("Enter your Name:");
-            String name = scanner.nextLine();
-            System.out.println("Enter your GroupName:");
-            String groupName = scanner.nextLine();
+            // MySQL
+            try {
+                StudentDao studentDao = new StudentDaoImpl(mySqlConnection);
+                AttendanceDao attendanceDao = new AttendanceDaoImpl(mySqlConnection);
 
-            Student student = new Student(name, groupName);
-            Student savedStudent = studentDao.save(student);
-            System.out.println("savedStudent = " + savedStudent);
-            System.out.println("Operation is Done!");
+                Student student = new Student("Josip", "G55");
+                Student savedStudent = studentDao.save(student); // DONE
+                System.out.println("savedStudent = " + savedStudent);
+                attendanceDao.save(new Attendance(student, AttendanceStatus.PRESENT)); // DONE
+                System.out.println("Operation is Done!");
+
+
+            } catch (RuntimeException e) {
+                e.printStackTrace();
+            }
+            // an error happened
+            mySqlConnection.commit(); // save both records permanently
 
         } catch (SQLException e) {
-            System.out.println("MySQL DB Connection Failed.");
+            try {
+                mySqlConnection.rollback(); // Rollback transaction (Undo both insert queries)
+            } catch (SQLException ex) {
+                throw new RuntimeException(ex);
+            }
+            e.printStackTrace();
         }
+
+
     }
 }

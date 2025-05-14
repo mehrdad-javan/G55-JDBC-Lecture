@@ -5,6 +5,7 @@ import se.lexicon.model.Student;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -46,25 +47,81 @@ public class StudentDaoImpl implements StudentDao {
         return student;
     }
 
+
     @Override
     public List<Student> findAll() {
-        return null;
+        List<Student> students = new ArrayList<>();
+        String sql = "SELECT * FROM student";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql);
+             ResultSet resultSet = preparedStatement.executeQuery()) {
+
+            while (resultSet.next()) {
+                students.add(new Student(
+                        resultSet.getInt("id"),
+                        resultSet.getString("name"),
+                        resultSet.getString("class_group"),
+                        resultSet.getTimestamp("create_date").toLocalDateTime()
+                ));
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Error retrieving all students: " + e.getMessage());
+        }
+        return students;
     }
+
+
 
     @Override
     public Optional<Student> findById(int id) {
-        // todo: needs completion
+        String sql = "SELECT * FROM student WHERE id = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setInt(1, id);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+
+                if (resultSet.next()) {
+                    Student student = new Student(
+                            resultSet.getInt("id"),
+                            resultSet.getString("name"),
+                            resultSet.getString("class_group"),
+                            resultSet.getTimestamp("create_date").toLocalDateTime()
+                    );
+                    return Optional.of(student);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Error retrieving student: " + e.getMessage());
+        }
         return Optional.empty();
     }
 
+
     @Override
     public void update(Student student) {
-        // todo: needs completion
+        String sql = "UPDATE student SET name = ?, class_group = ? WHERE id = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setString(1, student.getName());
+            preparedStatement.setString(2, student.getClassGroup());
+            preparedStatement.setInt(3, student.getId());
+
+            preparedStatement.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("❌ Error updating student: " + e.getMessage());
+        }
     }
+
 
     @Override
     public boolean delete(int id) {
-        // todo: needs completion
+        String sql = "DELETE FROM student WHERE id = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+
+            preparedStatement.setInt(1, id);
+            return preparedStatement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.err.println("❌ Error deleting student: " + e.getMessage());
+        }
         return false;
     }
 }
